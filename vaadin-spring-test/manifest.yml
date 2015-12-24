@@ -1,0 +1,12 @@
+---
+applications:
+- name: vaadin-test
+  memory: 1G
+  buildpack: java_buildpack
+  path: build/libs/vaadin-spring-1.0.jar
+  host: vaadin-test
+  timeout: 180
+  services:
+   - vaadin
+  env:
+    SPRING_PROFILES_ACTIVE: cloud

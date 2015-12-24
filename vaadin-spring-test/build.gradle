@@ -1,0 +1,62 @@
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.github.jacobono:gradle-jaxb-plugin:1.3.6'
+        classpath 'org.springframework.boot:spring-boot-gradle-plugin:1.3.0.RELEASE'
+    }
+}
+
+group 'home'
+version '1.0'
+
+apply plugin: 'java'
+compileJava {
+    sourceCompatibility = '1.8'
+}
+apply plugin: 'spring-boot'
+project.ext.springBoot = '1.3.0.RELEASE'
+project.ext.vaadin='7.5.8'
+project.ext.mainClassName = 'work.VaadinTestApplication'
+
+repositories {
+    jcenter()
+    mavenCentral()
+    mavenLocal()
+}
+dependencyManagement {
+    imports {
+        mavenBom 'org.springframework.cloud:spring-cloud-starter-parent:Brixton.M3'
+    }
+}
+dependencies {
+    compile 'io.undertow:undertow-servlet:1.2.11.Final'
+    compile ('io.undertow:undertow-core:1.2.11.Final'){
+        exclude module: 'jboss-logging'
+    }
+    compile 'org.springframework.boot:spring-boot-starter:'+springBoot
+    compile 'org.springframework.boot:spring-boot-starter-web:'+springBoot
+    compile ('org.springframework.boot:spring-boot-starter-data-rest:'+springBoot){
+        exclude module: 'spring-boot-starter-tomcat'
+    }
+    compile ('org.springframework.boot:spring-boot-starter-data-jpa:'+springBoot){
+        exclude group: 'org.hibernate'
+    }
+    // To use Spring Cloud Connectors for development
+    compile 'org.springframework.cloud:spring-cloud-core:1.2.1.RELEASE'
+    compile 'org.springframework.cloud:spring-cloud-cloudfoundry-connector:1.2.1.RELEASE'
+//    compile 'org.springframework.cloud:spring-cloud-localconfig-connector:1.2.1.RELEASE'
+    compile 'org.springframework.cloud:spring-cloud-spring-service-connector:1.2.1.RELEASE'
+    compile 'mysql:mysql-connector-java'
+    compile 'home.vaadin.components:vaadin-grid-spring-client:1.0-SNAPSHOT'
+    compile 'home.vaadin.components:vaadin-grid-spring-data:1.0-SNAPSHOT'
+    compile 'com.vaadin:vaadin-themes:'+vaadin
+    testCompile 'junit:junit:4.11'
+    testCompile 'org.springframework:spring-test:4.2.3.RELEASE'
+    testCompile 'org.mockito:mockito-all:1.9.5'
+
+    compile 'org.projectlombok:lombok:1.16.4'
+}
+

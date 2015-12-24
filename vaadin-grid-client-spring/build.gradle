@@ -1,0 +1,23 @@
+apply plugin: "maven"
+group 'home.vaadin.components'
+version '1.0-SNAPSHOT'
+
+apply plugin: 'java'
+
+sourceCompatibility = 1.8
+project.ext.vaadin='7.5.8'
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    compile 'home.vaadin.components:vaadin-grid:1.0-SNAPSHOT'
+    compile 'home.vaadin.components:vaadin-grid-spring-data:1.0-SNAPSHOT'
+    compile 'com.vaadin:vaadin-spring:1.0.0'
+    compile 'com.vaadin:vaadin-spring-boot:1.0.0'
+    compile ('com.vaadin:vaadin-spring-boot-starter:1.0.0'){
+        exclude module: 'spring-boot-starter-tomcat'
+    }
+    compile 'org.slf4j:slf4j-api:1.7.13'
+}
