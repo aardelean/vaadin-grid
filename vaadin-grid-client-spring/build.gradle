@@ -12,8 +12,7 @@ repositories {
 }
 
 dependencies {
-    compile 'home.vaadin.components:vaadin-grid:1.0-SNAPSHOT'
-    compile 'home.vaadin.components:vaadin-grid-spring-data:1.0-SNAPSHOT'
+    compile 'home.vaadin.components:vaadin-grid-client:1.0-SNAPSHOT'
     compile 'com.vaadin:vaadin-spring:1.0.0'
     compile 'com.vaadin:vaadin-spring-boot:1.0.0'
     compile ('com.vaadin:vaadin-spring-boot-starter:1.0.0'){

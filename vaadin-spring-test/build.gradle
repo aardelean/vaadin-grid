@@ -50,8 +50,8 @@ dependencies {
 //    compile 'org.springframework.cloud:spring-cloud-localconfig-connector:1.2.1.RELEASE'
     compile 'org.springframework.cloud:spring-cloud-spring-service-connector:1.2.1.RELEASE'
     compile 'mysql:mysql-connector-java'
-    compile 'home.vaadin.components:vaadin-grid-spring-client:1.0-SNAPSHOT'
-    compile 'home.vaadin.components:vaadin-grid-spring-data:1.0-SNAPSHOT'
+    compile 'home.vaadin.components:vaadin-grid-client-spring:1.0-SNAPSHOT'
+    compile 'home.vaadin.components:vaadin-grid-server-spring:1.0-SNAPSHOT'
     compile 'com.vaadin:vaadin-themes:'+vaadin
     testCompile 'junit:junit:4.11'
     testCompile 'org.springframework:spring-test:4.2.3.RELEASE'
