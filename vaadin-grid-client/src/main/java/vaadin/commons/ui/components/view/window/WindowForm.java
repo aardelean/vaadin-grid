@@ -3,6 +3,7 @@ package vaadin.commons.ui.components.view.window;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import vaadin.commons.ui.components.view.Configurator;
 import vaadin.commons.ui.components.view.form.FormEvent;
 import vaadin.commons.ui.components.view.form.JPAForm;
 import vaadin.commons.ui.components.view.grid.container.EntityContainerFacade;
@@ -13,10 +14,12 @@ import java.util.Collection;
 public class WindowForm<T> extends Window {
 
 	private JPAForm form;
+	private Configurator<T> configurator;
 
-	public WindowForm(String name, EntityContainerFacade<T> container, EntityFieldGroup<T> entityFieldGroup){
-		super(name);
-		init(container, entityFieldGroup);
+	public WindowForm(Configurator<T> configurator){
+		super(configurator.getFormLabel());
+		this.configurator = configurator;
+		init(configurator.getEntityContainer(), configurator.getEntityFieldGroupFactory().buildNewEntityFieldGroup());
 	}
 
 	protected void init(EntityContainerFacade<T> container, EntityFieldGroup<T> entityFieldGroup){

@@ -52,6 +52,7 @@ public class SpringDataContainerDelegate implements ContainerDelegate {
     @Override
     @Transactional
     public <T> void deleteEntity(T t) {
+        t = em.merge(t);
         em.remove(t);
     }
 

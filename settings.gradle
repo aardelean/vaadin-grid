@@ -1,0 +1,7 @@
+include ':vaadin-grid-server-api', 
+		':vaadin-grid-server-hibernate',
+		':vaadin-grid-server-spring',
+		':vaadin-grid-client',
+		':vaadin-grid-client-spring',
+		':vaadin-spring-test'
+

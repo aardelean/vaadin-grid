@@ -1,0 +1,34 @@
+apply plugin: "maven"
+apply plugin: "application"
+mainClassName='work.VaadinTestApplication'
+allprojects {
+    apply plugin: "maven"
+    apply plugin: 'java'
+
+    group 'home.vaadin.components'
+    version '1.0-SNAPSHOT'
+    sourceCompatibility = 1.8
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        jcenter()
+    }
+    task list << { task -> println "$task.project.name" }
+}
+//dependsOn: getTasksByName('install', true)
+
+task('runExec',dependsOn: getTasksByName('install', true)){
+	doLast{
+		project(':vaadin-spring-test') {
+			javaexec {
+				println 'starting main class'
+				classpath = sourceSets.main.runtimeClasspath
+				main = 'work.VaadinTestApplication'
+				jvmArgs = ['-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=8001']
+			}
+		}
+	}
+}
+subprojects {
+  
+}

@@ -1,51 +1,38 @@
 package vaadin.commons.ui.components.view.grid.fields;
 
-import com.vaadin.data.Validator;
 import com.vaadin.data.fieldgroup.BeanFieldGroup;
 import com.vaadin.data.util.BeanItem;
 import com.vaadin.ui.Field;
 import com.vaadin.ui.TextField;
+import vaadin.commons.ui.components.view.Configurator;
 import vaadin.commons.ui.components.view.convertors.SimpleStringToIntegerConvertor;
 import vaadin.commons.ui.components.view.form.ValidationEvent;
-import vaadin.commons.ui.components.view.grid.JPAGrid;
 
 import java.util.*;
 
 
-public abstract class EntityFieldGroup<T> extends BeanFieldGroup {
-
-	public String startValidityDatePropertyName;
-	public String endValidityDatePropertyName;
+public class EntityFieldGroup<T> extends BeanFieldGroup {
 
 
-	public final static String PRODUCT_CODE = "productCode";
-	private List<ValidationEvent<T>> validationEvents = new ArrayList<ValidationEvent<T>>();
 	private Map<String, Field> fieldMap = new LinkedHashMap<String, Field>();
-	private boolean isImport = false;
+	private Configurator<T> configurator;
+	private boolean isImport;
 
-	public EntityFieldGroup(Class<T> clazz){
-		this(clazz, false);
+	public EntityFieldGroup(Configurator<T> configurator){
+		this(configurator, false);
 	}
 
-	public EntityFieldGroup(Class<T> clazz, boolean isImport){
-		super(clazz);
+	public EntityFieldGroup(Configurator<T> configurator, boolean isImport){
+		super(configurator.getType());
+		setItemDataSource(configurator.getEntityInstantiator().entity());
+		this.configurator = configurator;
+		super.setItemDataSource(new BeanItem<T>(configurator.getEntityInstantiator().entity()));
 		this.isImport = isImport;
-		super.setItemDataSource(new BeanItem<T>(newEntity()));
 		addFieldBindings();
-		addValidator(new ValidationEvent<T>() {
-			@Override
-			public void validateBean(T t) throws Validator.InvalidValueException {
-				validate(t);
-			}
-		});
-	}
-
-	protected void validate(T t) {
-
 	}
 
 	private void addFieldBindings(){
-		for(FieldDefinition fieldDefinition: getFormFields()){
+		for(FieldDefinition fieldDefinition: getFieldDefinition()){
 			String fieldId = fieldDefinition.getEntityField();
 			this.addField(fieldDefinition.getLabel(),
 					             fieldId,
@@ -98,30 +85,36 @@ public abstract class EntityFieldGroup<T> extends BeanFieldGroup {
 		return ((BeanItem<T>) getItemDataSource()).getBean();
 	}
 	public void validateBean(){
-		for(ValidationEvent<T> validationEvent : validationEvents){
-			validationEvent.validateBean(getEntity());
+		internalValidate(configurator.getValidators());
+		if(isImport){
+			internalValidate(configurator.getImportOnlyValidators());
+		}else{
+			internalValidate(configurator.getFormOnlyValidators());
 		}
 	}
-	public void addValidator(ValidationEvent<T> validationEvent){
-		validationEvents.add(validationEvent);
+
+	private void internalValidate(List<ValidationEvent<T>> validators) {
+		for(ValidationEvent<T> validationEvent : validators){
+			validationEvent.validateBean(getEntity());
+		}
 	}
 
 	public Map<String, Field> getFieldMap(){
 		return fieldMap;
 	}
 
-	protected abstract T newEntity();
 
-	public abstract FieldDefinitionContainer getFormFields();
+	public FieldDefinitionContainer getFieldDefinition(){
+		return configurator.getFieldDefinitions();
+	}
 
 	/**
 	 * All grid columns binded with reflection to the entity.
 	 * Additional to reflection fields, a single or multiple fields can be specified,
 	 * but also implemented for them the methods
-	 * {@link JPAGrid#getPropertyResolver()} or {@link JPAGrid#getMultiplePropertyResolvers()}
 	 */
 	public Set<String> getGridFields(){
-		return getFormFields().getEntityFields();
+		return getFieldDefinition().getEntityFields();
 	}
 
 	/**
@@ -143,20 +136,7 @@ public abstract class EntityFieldGroup<T> extends BeanFieldGroup {
 		return Number.class.isAssignableFrom(getItemProperty(columnId).getType());
 	}
 
-	public void setStartValidityDatePropertyName(String startValidityDatePropertyName) {
-		this.startValidityDatePropertyName = startValidityDatePropertyName;
+	public Set<String> getFormFields(){
+		return configurator.getFormFields();
 	}
-
-	public void setEndValidityDatePropertyName(String endValidityDatePropertyName) {
-		this.endValidityDatePropertyName = endValidityDatePropertyName;
-	}
-
-	public String getStartValidityDatePropertyName() {
-		return startValidityDatePropertyName;
-	}
-
-	public String getEndValidityDatePropertyName() {
-		return endValidityDatePropertyName;
-	}
-
 }

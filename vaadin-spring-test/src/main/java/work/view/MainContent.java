@@ -41,7 +41,7 @@ public class MainContent extends VerticalLayout {
 		mainMenu.addItem(label, new MenuBar.Command() {
 			@Override
 			public void menuSelected(MenuBar.MenuItem selectedItem) {
-				parent.setContent(grid.start(authorizationManager.hasWriteAccess(grid), "aardelean"));
+				parent.setContent(grid.start());
 			}
 		});
 	}

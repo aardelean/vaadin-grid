@@ -13,12 +13,13 @@ import com.vaadin.ui.Grid;
 import com.vaadin.ui.TextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import vaadin.commons.ui.components.view.Configurator;
 import vaadin.commons.ui.components.view.grid.container.EntityContainerFacade;
 import vaadin.commons.ui.components.view.grid.fields.EntityFieldGroup;
 import vaadin.commons.ui.components.view.grid.fields.FieldDefinition;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Common class for easing up writing new grid components.
@@ -36,42 +37,33 @@ public class JPAGrid<T> extends Grid {
 	private static final Logger logger = LoggerFactory.getLogger(JPAGrid.class);
 
 	private HeaderRow filteringHeader;
+	private Configurator<T> configurator;
 	private EntityFieldGroup<T> entityFieldGroup;
-	private double viewPageSize;
-	/**
-	 * Multiple columns can derived from existing ones. Add all PropertyResolvers for each column not present in the entity
-	 * but present in the grid column definition.
-	 */
-	private List<PropertyResolver> additionalPropertyResolvers;
-	private boolean editAllowed;
-	/**
-	 * Override this to have a fast one new column resulting from calculation of others.
-	 */
-	private PropertyResolver propertyResolver;
-	private EntityContainerFacade<T> container;
 
-	public JPAGrid(EntityContainerFacade<T> container, EntityFieldGroup<T> entityFieldGroup){
+	public JPAGrid(Configurator<T> configurator){
 		super((String)null);
-		this.entityFieldGroup = entityFieldGroup;
-		this.container = container;
+		this.configurator = configurator;
+		entityFieldGroup = configurator.getEntityFieldGroupFactory().buildNewEntityFieldGroup();
+		init();
 	}
 
 	protected JPAGrid<T> init(){
-		super.setContainerDataSource((Container.Indexed)decorateContainer(container));
+		super.setContainerDataSource((Container.Indexed)decorateContainer(configurator.getEntityContainer()));
 		setColumnReorderingAllowed(true);
 		errorHandler();
 		//no edit allowed for ratanet admin
-		setEditorEnabled(editAllowed);
-		super.setHeightByRows(viewPageSize);
+		setEditorEnabled(configurator.isEditAllowed());
+		super.setHeightByRows(configurator.getViewPageSize());
 		super.setHeightMode(HeightMode.ROW);
+		addItemClickListener(event -> configurator.getEntityInstantiator().setEntity((T)event.getItemId()));
 		setSelectionMode(SelectionMode.SINGLE);
 		super.setSizeFull();
 		super.setImmediate(false);
 		addColumns();
 		setConverters();
 		setRenderers();
-		buildHeaderFiltering(container);
-		gridCustomFilters(container);
+		buildHeaderFiltering(configurator.getEntityContainer());
+		gridCustomFilters(configurator.getEntityContainer());
 		return this;
 	}
 
@@ -81,15 +73,16 @@ public class JPAGrid<T> extends Grid {
 
 
 	private void addColumns() {
-		for(String columnName: entityFieldGroup.getGridFields()){
+		Set<String> gridFields = configurator.getGridFields();
+		for(String columnName: gridFields){
 			if(columnName.contains(".")){
-				((BeanItemContainer)container).addNestedContainerProperty(columnName);
+				((BeanItemContainer)configurator.getEntityContainer()).addNestedContainerProperty(columnName);
 			}
 		}
-		setColumns((Object[])entityFieldGroup.getGridFields().toArray(new String[entityFieldGroup.getGridFields().size()]));
+		setColumns((Object[])gridFields.toArray(new String[0]));
 		for(Column column: getColumns()){
 			column.setHidable(true);
-			FieldDefinition fieldDefinition = entityFieldGroup.getFormFields().getByFieldId((String) column.getPropertyId());
+			FieldDefinition fieldDefinition = configurator.getFieldDefinitions().getByFieldId((String) column.getPropertyId());
 			if(fieldDefinition!=null) {
 				column.setHeaderCaption(fieldDefinition.getLabel());
 			}
@@ -97,7 +90,8 @@ public class JPAGrid<T> extends Grid {
 	}
 
 	private void setConverters() {
-		for(String columnName: entityFieldGroup.getGridFields()) {
+		Set<String> gridFields = configurator.getGridFields();
+		for(String columnName: gridFields) {
 			if (entityFieldGroup.getFieldMap().get(columnName) != null) {
 				if (entityFieldGroup.isDateField(columnName)) {
 					getColumn(columnName).setConverter(new DateConverter());
@@ -107,7 +101,8 @@ public class JPAGrid<T> extends Grid {
 	}
 
 	private void setRenderers() {
-		for(String columnName:entityFieldGroup.getGridFields()) {
+		Set<String> gridFields = configurator.getGridFields();
+		for(String columnName:gridFields) {
 			if (entityFieldGroup.getFieldMap().get(columnName) != null) {
 				if (entityFieldGroup.isNumberField(columnName)) {
 					getColumn(columnName).setRenderer(new SimpleNumberRenderer());
@@ -121,7 +116,7 @@ public class JPAGrid<T> extends Grid {
 	@Override
 	protected void doCancelEditor() {
 		super.doCancelEditor();
-		setEditorEnabled(editAllowed);
+		setEditorEnabled(configurator.isEditAllowed());
 	}
 
 	@Override
@@ -130,7 +125,9 @@ public class JPAGrid<T> extends Grid {
 		T bean = (T) ((BeanItem) getEditorFieldGroup().getItemDataSource()).getBean();
 		entityFieldGroup.setItemDataSource(bean);
 		entityFieldGroup.commit();
-		container.refresh();
+		entityFieldGroup.validateBean();
+		configurator.getEntityContainer().mergeEntity(bean);
+		configurator.getEntityContainer().refresh();
 	}
 
 
@@ -139,8 +136,8 @@ public class JPAGrid<T> extends Grid {
 	 */
 	private void buildHeaderFiltering(EntityContainerFacade<T> container) {
 		getFilteringHeader();
-		if(entityFieldGroup.getFilterFields() != null) {
-			for (String filtered : entityFieldGroup.getFilterFields()) {
+		if(configurator.getFilterFields() != null) {
+			for (String filtered : configurator.getFilterFields()) {
 				addColumnFiltering(container, filtered);
 			}
 		}
@@ -199,51 +196,20 @@ public class JPAGrid<T> extends Grid {
 	 */
 	protected Container decorateContainer(Container container){
 		Container decoratedContainer = container;
-		addPropertyResolver(propertyResolver);
-		if(getMultiplePropertyResolvers() !=null && !getMultiplePropertyResolvers().isEmpty()) {
+		List<PropertyResolver> propertyResolvers = configurator.getGridPropertyResolvers();
+		if(propertyResolvers !=null && !propertyResolvers.isEmpty()) {
 			GeneratedPropertyContainer propertyContainer = new GeneratedPropertyContainer((Container.Indexed)container);
-			for(PropertyResolver propertyResolver: getMultiplePropertyResolvers()){
+			for(PropertyResolver propertyResolver: propertyResolvers){
 				propertyContainer.addGeneratedProperty(propertyResolver.getPropertyName(), propertyResolver);
 			}
 			decoratedContainer = propertyContainer;
 		}
 		return decoratedContainer;
 	}
-
-	private void addPropertyResolver(PropertyResolver propertyResolver){
-		if(propertyResolver!=null) {
-			if (additionalPropertyResolvers == null) {
-				additionalPropertyResolvers = new ArrayList<>();
-			}
-			additionalPropertyResolvers.add(propertyResolver);
-		}
-	}
-
-
-	protected List<PropertyResolver> getMultiplePropertyResolvers(){
-		return additionalPropertyResolvers;
-	}
-
 	public HeaderRow getFilteringHeader() {
 		if(filteringHeader == null){
 			filteringHeader = appendHeaderRow();
 		}
 		return filteringHeader;
-	}
-
-	public void setViewPageSize(double viewPageSize) {
-		this.viewPageSize = viewPageSize;
-	}
-
-	public void setAdditionalPropertyResolvers(List<PropertyResolver> additionalPropertyResolvers) {
-		this.additionalPropertyResolvers = additionalPropertyResolvers;
-	}
-
-	public void setEditAllowed(boolean editAllowed) {
-		this.editAllowed = editAllowed;
-	}
-
-	public void setPropertyResolver(PropertyResolver<T> propertyResolver) {
-		this.propertyResolver = propertyResolver;
 	}
 }

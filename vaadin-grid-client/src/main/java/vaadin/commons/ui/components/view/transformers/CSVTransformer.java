@@ -45,7 +45,7 @@ public class CSVTransformer implements ContainerTransformer {
 	public void entitiesToCsv(OutputStream outputStream, int maxRowNo) throws IOException {
 		CsvWriter csvWriter = new CsvWriter(outputStream, delimiter, Charset.defaultCharset());
 		Collection<?> itemIds = container.getItemIds();
-		Set<String> entityFields = entityFieldGroupFactory.getFormFields().getEntityFields();
+		Set<String> entityFields = entityFieldGroupFactory.getFormFields();
 		for(String headerColumn: entityFields){
 			csvWriter.write(headerColumn);
 		}
@@ -78,7 +78,7 @@ public class CSVTransformer implements ContainerTransformer {
 		csvReader.readHeaders();
 		while (csvReader.readRecord()) {
 			EntityFieldGroup entityFieldGroup = entityFieldGroupFactory.buildNewEntityFieldGroup(true);
-			Collection<?> names = entityFieldGroupFactory.getFormFields().getEntityFields();
+			Collection<?> names = entityFieldGroupFactory.getFormFields();
 			for(Object columnName: names){
 				Object value = csvReader.get(columnName.toString());
 				Field<Object> field = (Field<Object>) entityFieldGroup.getFieldMap().get(columnName);

@@ -45,9 +45,9 @@ public class JPAForm<T> extends CustomComponent {
 		mainLayout.setMargin(new MarginInfo(true, true, true, true));
 		mainLayout.addComponent(header);
 		mainLayout.addComponent(form);
-		for(FieldDefinition fieldEntry : fieldGroup.getFormFields()){
-			String entityField = fieldEntry.getEntityField();
-			addFieldToForm(entityField, fieldGroup.getFieldMap().get(entityField), fieldEntry.isReadOnly());
+		for(String fieldEntry : fieldGroup.getFormFields()){
+			FieldDefinition entityField = fieldGroup.getFieldDefinition().getByFieldId(fieldEntry);
+			addFieldToForm(fieldEntry, fieldGroup.getFieldMap().get(fieldEntry), entityField.isReadOnly());
 		}
 		additionalFieldsToForm(form);
 		mainLayout.addComponent(footer);
